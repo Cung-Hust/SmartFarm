@@ -1,0 +1,48 @@
+
+// Op of Message Request
+#define OP_DEVICE_ADD "device:add"
+#define OP_DEVICE_UPDATE "device:update"
+#define OP_DEVICE_UPDATE_STATE "device:updatestate"
+#define OP_DEVICE_DELETE "device:delete"
+#define OP_DEVICE_COUNT "device:count"
+#define OP_DEVICE_LIST "device:list"
+#define OP_DEVICE_READ "device:read"
+#define OP_RESOURCE_ADD "resource:add"
+#define OP_RESOURCE_DELETE "resource:delete"
+#define OP_RESOURCE_LIST "resource:list"
+#define OP_PROFILE_ADD "profile:add"
+#define OP_PROFILE_DELETE "profile:delete"
+#define OP_PROFILE_LIST "profile:list"
+#define OP_DEVICESERVICE_ADD "deviceservice:add"
+#define OP_DEVICESERVICE_DELETE "deviceservice:delete"
+#define OP_DEVICESERVICE_LIST "deviceservice:list"
+
+#define OP_READINGS_ADD "readings:add"
+#define OP_READINGS_LIST "readings:list"
+#define OP_READINGS_READ "readings:read"
+
+#define OP_COMMAND_GET "command:get"
+#define OP_COMMAND_SET "command:set"
+#define OP_COMMAND_DISCOVERY "command:discovery"
+
+#define OP_DEVICE_GET "device:get"
+#define OP_DEVICE_SET "device:set"
+#define OP_DEVICE_DISCOVERY "device:discovery"
+#define OP_DEVICECALLBACK_ADD "devicecallback:add"
+#define OP_DEVICECALLBACK_UPDATE "devicecallback:update"
+#define OP_DEVICECALLBACK_DELETE "devicecallback:delete"
+
+#define OP_RULE_ADD "rule:add"
+#define OP_RULE_UPDATE "rule:update"
+#define OP_RULE_DELETE "rule:delete"
+#define OP_RULE_LIST "rule:list"
+#define OP_RULE_READ "rule:read"
+#define OP_RULE_STATE "rule:state"
+#define OP_RULE_TRIGGER "rule:trigger"
+
+#define OP_NOTIFY_ADD "notify:add"
+#define OP_OPERATION_SET "operation:set"
+#define OP_METRIC_GET "metric:get"
+#define OP_GATEWAY_PING "gateway:ping"
+
+#define INVALID_MESSAGE_ERROR "Invalid message"
