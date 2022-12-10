@@ -8,8 +8,8 @@
 #pragma once
 
 #include <iostream>
-#include "json/json.hpp"
-#include "clients/Rule.hpp"
+#include "../json/json.hpp"
+#include "../clients/Rule.hpp"
 
 using namespace std;
 using nlohmann::json;
@@ -32,7 +32,7 @@ using nlohmann::json;
 #define LIGHT_SENSOR_NAME "LightSensor"
 #define LIGHT_SENSOR_TYPE 3
 #define LIGHT_SENSOR_MIN_VALUE 0
-#define LIGHT_SENSOR_MAX_VALUE 100
+#define LIGHT_SENSOR_MAX_VALUE 100000
 
 #define CO2_SENSOR_NAME "CO2Sensor"
 #define CO2_SENSOR_TYPE 4
@@ -46,8 +46,8 @@ using nlohmann::json;
 
 #define PH_SENSOR_NAME "PHSensor"
 #define PH_SENSOR_TYPE 6
-#define PH_SENSOR_MIN_VALUE 0
-#define PH_SENSOR_MAX_VALUE 10
+#define PH_SENSOR_MIN_VALUE 3
+#define PH_SENSOR_MAX_VALUE 9
 
 class GetResponseHandler
 {

@@ -37,6 +37,8 @@ namespace server
         response.header = header;
         response.id = id;
 
+        cout << "toTopic : " << toTopic << endl;
+
         string responseStr = serialize<dto::ResponseWithId>(response);
         if (this->transport->publish(toTopic, responseStr))
         {

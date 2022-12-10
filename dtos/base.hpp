@@ -121,6 +121,7 @@ namespace dto
     struct DeviceCondition
     {
         std::string deviceId;
+        std::string ruleId;
         std::string resourceName;
         std::string compareOperator;
         std::string value;

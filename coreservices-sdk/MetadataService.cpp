@@ -6,7 +6,7 @@
  */
 
 #include "MetadataService.hpp"
-#include "clients/Exdis.hpp"
+#include "../clients/Exdis.hpp"
 
 #include <iostream>
 #include <unistd.h>
@@ -87,6 +87,7 @@ namespace coreservices
     void MetadataService::addDeviceHandler(dto::HeaderRequest header, string message)
     {
         string err;
+        cout << "header.client : " << header.client << endl;
         string responseTopic = this->getReponseTopic(header.client);
         dto::AddDeviceRequest req;
         try
@@ -172,6 +173,7 @@ namespace coreservices
         }
 
         err = this->server.responseId(responseTopic, req.header.rqi, err, device.id);
+        cout << "MetadataService::addDeviceHandler :: -->" << responseTopic << endl;
         if (err != "")
         {
             err = this->name + ": " + err;

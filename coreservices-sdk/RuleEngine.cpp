@@ -1,9 +1,9 @@
 #include "RuleEngine.hpp"
-#include "clients/Metadata.hpp"
-#include "database/Database.hpp"
-#include "common/utils.hpp"
-#include "clients/Command.hpp"
-#include "clients/Rule.hpp"
+#include "../clients/Metadata.hpp"
+#include "../database/Database.hpp"
+#include "../common/utils.hpp"
+#include "../clients/Command.hpp"
+#include "../clients/Rule.hpp"
 
 #include <stdlib.h>
 #include <ctime>
@@ -91,7 +91,6 @@ namespace coreservices
 
     uint64_t calTimestamp(bool checkCurrentTime, uint64_t currentTime, uint64_t startTime, uint64_t endTime, uint32_t startInDayTime, uint32_t endInDayTime, vector<string> repeatDays, uint64_t timeInDayCondition, uint32_t delayTime)
     {
-        // uint64_t timestamp;
         string dayInWeek = getDayInWeek();
         uint64_t startDayTimestamp = (currentTime / 86400) * 86400;
 
@@ -146,6 +145,13 @@ namespace coreservices
 
     void RuleEngine::addActionTimestampListFromRule(model::Rule rule, bool checkCurrentTime)
     {
+        // Check mode
+        auto resources = Db::getDb()->listReading("Gateway");
+        if (resources[0].value != "1")
+        {
+            cout << "Select Schedule mode" << endl;
+            return;
+        }
         ActionTimestamp actionTimestamp;
         Action action;
 
@@ -156,10 +162,16 @@ namespace coreservices
         {
             return;
         }
-
+        int noOfTimestamps = 0;
         for (auto time : rule.timeInDayConditions)
         {
             cout << time << endl;
+            noOfTimestamps++;
+        }
+
+        for (int i = 0; i < noOfTimestamps; i += 2)
+        {
+            cout << "Rule - Start time \t\t " << rule.timeInDayConditions[i] << endl;
             for (auto devAction : rule.deviceActions)
             {
                 uint64_t timestamp = calTimestamp(
@@ -170,7 +182,8 @@ namespace coreservices
                     rule.startInDayTime,
                     rule.endInDayTime,
                     rule.repeatDays,
-                    time,
+                    rule.timeInDayConditions[i],
+                    // time,
                     devAction.delayTime * 60);
                 if (timestamp == 0)
                 {
@@ -180,11 +193,12 @@ namespace coreservices
                 action.DeviceId = devAction.deviceId;
                 action.ResourceName = devAction.resourceName;
                 action.Value = devAction.value;
+                cout << "ResourceName :: " << action.ResourceName << "  ---  Value :: " << action.Value << endl;
                 action.ActionRuleId = "";
 
                 actionTimestamp.action = action;
                 actionTimestamp.timestamp = timestamp + 2;
-                cout << "\033[0;38mLIST RULE :: " << action.RuleId << " ------ :: ------ START TIME (UNIX) -> :: :: " << actionTimestamp.timestamp << endl;
+                cout << "\033[0;38mRule :: " << action.RuleId << " \t--- :: --- Time (Unix) :: " << actionTimestamp.timestamp << "  --- Device Action :: " << action.DeviceId << endl;
                 this->ActionTimestampList::push_back(actionTimestamp);
             }
             for (auto ruleAction : rule.ruleActions)
@@ -197,7 +211,69 @@ namespace coreservices
                     rule.startInDayTime,
                     rule.endInDayTime,
                     rule.repeatDays,
-                    time,
+                    //                    time,
+                    rule.timeInDayConditions[i],
+                    ruleAction.delayTime * 60);
+                if (timestamp == 0)
+                {
+                    continue;
+                }
+
+                action.DeviceId = "";
+                action.ResourceName = "";
+                action.Value = "";
+                action.ActionRuleId = ruleAction.actionRuleId;
+
+                actionTimestamp.action = action;
+                actionTimestamp.timestamp = timestamp + 2;
+                this->ActionTimestampList::push_back(actionTimestamp);
+            }
+        }
+
+        for (int i = 1; i < noOfTimestamps; i += 2)
+        {
+            cout << "Rule - Stop time \t\t " << rule.timeInDayConditions[i] << endl;
+            for (auto devAction : rule.deviceActions)
+            {
+                uint64_t timestamp = calTimestamp(
+                    checkCurrentTime,
+                    currentTime,
+                    rule.startTime,
+                    rule.endTime,
+                    rule.startInDayTime,
+                    rule.endInDayTime,
+                    rule.repeatDays,
+                    rule.timeInDayConditions[i],
+                    // time,
+                    devAction.delayTime * 60);
+                if (timestamp == 0)
+                {
+                    continue;
+                }
+
+                action.DeviceId = devAction.deviceId;
+                action.ResourceName = "OnOff";
+                action.Value = "false";
+                cout << "ResourceName :: " << action.ResourceName << "  \t---  Value :: " << action.Value << endl;
+                action.ActionRuleId = "";
+
+                actionTimestamp.action = action;
+                actionTimestamp.timestamp = timestamp + 2;
+                cout << "\033[0;38mTrigger rule :: " << action.RuleId << " \t--- :: --- Time (Unix) :: " << actionTimestamp.timestamp << "  --- Device Action :: " << action.DeviceId << endl;
+                this->ActionTimestampList::push_back(actionTimestamp);
+            }
+            for (auto ruleAction : rule.ruleActions)
+            {
+                uint64_t timestamp = calTimestamp(
+                    checkCurrentTime,
+                    currentTime,
+                    rule.startTime,
+                    rule.endTime,
+                    rule.startInDayTime,
+                    rule.endInDayTime,
+                    rule.repeatDays,
+                    //                    time,
+                    rule.timeInDayConditions[i],
                     ruleAction.delayTime * 60);
                 if (timestamp == 0)
                 {
@@ -218,12 +294,6 @@ namespace coreservices
 
     void RuleEngine::addOrRemoveActionTimestampListFromTriggerRule(string id, TriggerState state, string &err)
     {
-        // if (TriggerState::OFF)
-        // {
-        //     this->ActionTimestampList::removeByRuleId(id);
-        //     return;
-        // }
-        cout << "---------------> Rule >> " << id << endl;
         auto rule = Db::getDb()->readRule(id, err);
         if (err != "")
         {
@@ -266,7 +336,6 @@ namespace coreservices
 
     void RuleEngine::addOrRemoveActionTimestampListFromActiveRule(string id, ActiveState state, string &err)
     {
-        // cout << "RuleEngine::addOrRemoveActionTimestampListFromActiveRule :: " << id << "  state -> " << state << endl;
         if (state == ActiveState::DISABLED)
         {
             this->ActionTimestampList::removeByRuleId(id);
@@ -284,57 +353,53 @@ namespace coreservices
             return;
         }
 
-        if (rule.type == RuleType::SCHEDULE)
-        {
-            uint64_t currentTime = localTimestamp();
-            uint64_t startDayTimestamp = (currentTime / 86400) * 86400;
-            cout << "currentTime  " << currentTime << " startDayTimestamp " << startDayTimestamp << endl;
-            cout << rule.startInDayTime << endl;
-            cout << startDayTimestamp + rule.startInDayTime << endl;
-            cout << currentTime << "   " << startDayTimestamp + rule.startInDayTime + 60 << endl;
-            if (currentTime < startDayTimestamp + rule.startInDayTime || currentTime > startDayTimestamp + rule.startInDayTime + 60)
-            {
-                return;
-            }
-        }
-
         ActionTimestamp actionTimestamp;
         Action action;
 
         action.RuleId = rule.id;
-        uint64_t currentTime = localTimestamp();
 
-        for (auto time : rule.timeInDayConditions)
+        uint64_t currentTime = localTimestamp();
+        uint64_t startDayTimestamp = (currentTime / 86400) * 86400;
+        if (rule.type == RuleType::SCHEDULE)
         {
-            cout << time << endl;
+            if (currentTime > startDayTimestamp + rule.startInDayTime + 60)
+            {
+                return;
+            }
+            for (auto time : rule.timeInDayConditions)
+            {
+                cout << time << endl;
+                for (auto devAction : rule.deviceActions)
+                {
+                    action.DeviceId = devAction.deviceId;
+                    action.ResourceName = devAction.resourceName;
+                    action.Value = devAction.value;
+                    action.ActionRuleId = "";
+
+                    actionTimestamp.action = action;
+                    actionTimestamp.timestamp = startDayTimestamp + time + devAction.delayTime * 60;
+                    cout << "currentTime + devAction.delayTime * 60     " << currentTime + devAction.delayTime * 60;
+                    this->ActionTimestampList::push_back(actionTimestamp);
+                }
+                for (auto ruleAction : rule.ruleActions)
+                {
+                    action.DeviceId = "";
+                    action.ResourceName = "";
+                    action.Value = "";
+                    action.ActionRuleId = ruleAction.actionRuleId;
+
+                    actionTimestamp.action = action;
+                    actionTimestamp.timestamp = startDayTimestamp + time + ruleAction.delayTime * 60;
+                    this->ActionTimestampList::push_back(actionTimestamp);
+                }
+            }
+        }
+        else
+        {
+            cout << "Rule.type ....."
+                 << "SCENE" << endl;
             for (auto devAction : rule.deviceActions)
             {
-                // uint64_t timestamp = calTimestamp(
-                //     true,
-                //     currentTime,
-                //     rule.startTime,
-                //     rule.endTime,
-                //     rule.startInDayTime,
-                //     rule.endInDayTime,
-                //     rule.repeatDays,
-                //     time,
-                //     devAction.delayTime);
-
-                // cout << "timestamp :: " << timestamp << endl;
-
-                // if (timestamp == 0)
-                // {
-                //     continue;
-                // }
-
-                // action.DeviceId = devAction.deviceId;
-                // action.ResourceName = devAction.resourceName;
-                // action.Value = devAction.value;
-                // action.ActionRuleId = "";
-
-                // actionTimestamp.action = action;
-                // actionTimestamp.timestamp = timestamp;
-                // this->ActionTimestampList::push_back(actionTimestamp);
                 action.DeviceId = devAction.deviceId;
                 action.ResourceName = devAction.resourceName;
                 action.Value = devAction.value;
@@ -343,42 +408,6 @@ namespace coreservices
                 actionTimestamp.action = action;
                 actionTimestamp.timestamp = currentTime + devAction.delayTime * 60;
                 this->ActionTimestampList::push_back(actionTimestamp);
-                // usleep(50000);
-            }
-            for (auto ruleAction : rule.ruleActions)
-            {
-                // uint64_t timestamp = calTimestamp(
-                //     true,
-                //     currentTime,
-                //     rule.startTime,
-                //     rule.endTime,
-                //     rule.startInDayTime,
-                //     rule.endInDayTime,
-                //     rule.repeatDays,
-                //     time,
-                //     ruleAction.delayTime);
-                // if (timestamp == 0)
-                // {
-                //     continue;
-                // }
-
-                // action.DeviceId = "";
-                // action.ResourceName = "";
-                // action.Value = "";
-                // action.ActionRuleId = ruleAction.actionRuleId;
-
-                // actionTimestamp.action = action;
-                // actionTimestamp.timestamp = timestamp;
-                // this->ActionTimestampList::push_back(actionTimestamp);
-                action.DeviceId = "";
-                action.ResourceName = "";
-                action.Value = "";
-                action.ActionRuleId = ruleAction.actionRuleId;
-
-                actionTimestamp.action = action;
-                actionTimestamp.timestamp = currentTime + ruleAction.delayTime * 60;
-                this->ActionTimestampList::push_back(actionTimestamp);
-                // usleep(50000);
             }
         }
     }
@@ -396,9 +425,7 @@ namespace coreservices
             resources.insert({action.ResourceName, action.Value});
             options.insert({"response", "false"});
 
-            // TODO: handle error
             err = this->commandClient.issueSetCommand(rqi, action.DeviceId, resources, options);
-            // usleep(100000);
         }
         else if (action.ActionRuleId != "")
         {
@@ -425,7 +452,7 @@ namespace coreservices
 
     void RuleEngine::setStateCallback(string id, ActiveState state, string &err)
     {
-        // cout << "setStateCallback :: " << id << "  state: " << state << endl;
+        cout << "setStateCallback :: " << id << "  state: " << state << endl;
         this->addOrRemoveActionTimestampListFromActiveRule(id, state, err);
     }
 
@@ -437,17 +464,20 @@ namespace coreservices
 
     void RuleEngine::readingCallback(vector<model::Reading> readings, string &err)
     {
-        // cout << "readings.size() :: " << readings.size() << endl;
-        cout << "Reading Callback" << endl;
+        // Check mode
+        auto resources = Db::getDb()->listReading("Gateway");
+        if (resources[0].value != "2")
+        {
+            cout << "Select Rule mode" << endl;
+            return;
+        }
+        vector<string> ruleOperationIds;
         for (auto &reading : readings)
         {
-            // cout << "\033[0;32mReading:: \t\t\t \033[0;35mName: \t\t\t" << reading.resourceName << "\t\t\t Value : " << reading.value << "\033[0;36m" << endl;
             if (reading.resourceName == "OnOff" || reading.resourceName == "Battery")
             {
-                return;
+                continue;
             }
-            bool value_valid_min = false;
-            bool value_valid_max = false;
             string err;
             auto listRule = Db::getDb()->listRule("", err);
             if (err != "")
@@ -468,136 +498,154 @@ namespace coreservices
                         {
                             if (reading.deviceId == deviceCondition.deviceId)
                             {
-                                // cout << "deviceCondition.compareOperator :: " << deviceCondition.compareOperator << endl;
-                                if (deviceCondition.compareOperator == CompareOperator::GREATER)
-                                {
-                                    if (stoi(reading.value) >= stoi(deviceCondition.value))
-                                    {
-                                        value_valid_min = true;
-                                    }
-                                }
-                                else if (deviceCondition.compareOperator == CompareOperator::LESS)
-                                {
-                                    if (stoi(reading.value) <= stoi(deviceCondition.value))
-                                    {
-                                        value_valid_max = true;
-                                    }
-                                }
+                                ruleOperationIds.push_back(rule.id);
                             }
                         }
-                        if (value_valid_min && value_valid_max)
+                    }
+                }
+            }
+        }
+        ruleOperationIds.erase(unique(ruleOperationIds.begin(), ruleOperationIds.end()), ruleOperationIds.end());
+        uint8_t sizeOfRuleList = ruleOperationIds.size();
+        for (int i = 0; i < sizeOfRuleList; ++i)
+        {
+            cout << ruleOperationIds[i] << endl;
+            this->checkRule(ruleOperationIds[i]);
+        }
+    }
+
+    void RuleEngine::checkRule(string ruleId)
+    {
+        string err;
+        auto rule = Db::getDb()->readRule(ruleId, err);
+        bool value_valid_min = false, value_valid_max = false, runRule = false;
+        if (rule.conditionLogic == RuleLogic::AND)
+        {
+            for (auto deviceCondition : rule.deviceConditions)
+            {
+                auto resources = Db::getDb()->listReading(deviceCondition.deviceId);
+                for (auto resource : resources)
+                {
+                    if (resource.resourceName == deviceCondition.resourceName)
+                    {
+                        if (deviceCondition.compareOperator == CompareOperator ::GREATER)
                         {
-                            if (rule.conditionLogic == RuleLogic::AND)
+                            cout << "resource.value rule AND " << resource.value << endl;
+                            if (stoi(resource.value) >= stoi(deviceCondition.value))
                             {
-                                bool value_valid_min_logic = true;
-                                bool value_valid_max_logic = true;
-                                for (auto deviceCondition : deviceConditions)
-                                {
-                                    auto resources = Db::getDb()->listReading(deviceCondition.deviceId);
-                                    for (auto resource : resources)
-                                    {
-                                        if (resource.deviceId != deviceCondition.deviceId || (reading.deviceId == deviceCondition.deviceId && reading.resourceName == resource.resourceName) || resource.resourceName == "Battery")
-                                        {
-                                            continue;
-                                        }
-                                        // cout << "--------------------------------------------------------------------------------------------------------------------------------" << endl;
-                                        // cout << "resource.deviceId :: " << resource.deviceId << " :: deviceCondition.deviceId :: " << deviceCondition.deviceId << endl;
-                                        // cout << "deviceCondition.resourceName :: " << deviceCondition.resourceName << " :: deviceCondition.value :: " << deviceCondition.value << endl;
-                                        // cout << "resource.resourceName :: " << resource.resourceName << " :: resource.value :: " << resource.value << endl;
-                                        // cout << "deviceCondition.compareOperator :: " << deviceCondition.compareOperator << endl;
-                                        if (deviceCondition.compareOperator == CompareOperator ::GREATER)
-                                        {
-                                            // cout << "stoi(resource.value)" << stoi(resource.value) << endl;
-                                            // cout << "stoi(deviceCondition.value)" << stoi(deviceCondition.value) << endl;
-                                            if (stoi(resource.value) < stoi(deviceCondition.value))
-                                            {
-                                                value_valid_min_logic = false;
-                                            }
-                                        }
-                                        else if (deviceCondition.compareOperator == CompareOperator ::LESS)
-                                        {
-                                            if (stoi(resource.value) > stoi(deviceCondition.value))
-                                            {
-                                                value_valid_max_logic = false;
-                                            }
-                                        }
-                                    }
-                                }
-                                // cout << endl;
-                                // cout << "value_valid_min_logic && value_valid_max_logic   " << value_valid_min_logic << "  &&  " << value_valid_max_logic << endl;
-                                // cout << endl;
-                                if (value_valid_min_logic && value_valid_max_logic)
-                                {
-                                    ActionTimestamp actionTimestamp;
-                                    Action action;
-
-                                    action.RuleId = rule.id;
-                                    uint64_t currentTime = localTimestamp();
-
-                                    for (auto time : rule.timeInDayConditions)
-                                    {
-                                        time++;
-                                        for (auto devAction : rule.deviceActions)
-                                        {
-                                            action.DeviceId = devAction.deviceId;
-                                            action.ResourceName = devAction.resourceName;
-                                            action.Value = devAction.value;
-                                            action.ActionRuleId = "";
-
-                                            actionTimestamp.action = action;
-                                            actionTimestamp.timestamp = currentTime + devAction.delayTime * 60 + 2;
-                                            this->ActionTimestampList::push_back(actionTimestamp);
-                                        }
-                                        for (auto ruleAction : rule.ruleActions)
-                                        {
-                                            action.DeviceId = "";
-                                            action.ResourceName = "";
-                                            action.Value = "";
-                                            action.ActionRuleId = ruleAction.actionRuleId;
-
-                                            actionTimestamp.action = action;
-                                            actionTimestamp.timestamp = currentTime + ruleAction.delayTime * 60 + 2;
-                                            this->ActionTimestampList::push_back(actionTimestamp);
-                                        }
-                                    }
-                                }
+                                runRule = true;
                             }
                             else
                             {
-                                ActionTimestamp actionTimestamp;
-                                Action action;
-
-                                action.RuleId = rule.id;
-                                uint64_t currentTime = localTimestamp();
-
-                                for (auto time : rule.timeInDayConditions)
-                                {
-                                    time++;
-                                    for (auto devAction : rule.deviceActions)
-                                    {
-                                        action.DeviceId = devAction.deviceId;
-                                        action.ResourceName = devAction.resourceName;
-                                        action.Value = devAction.value;
-                                        action.ActionRuleId = "";
-
-                                        actionTimestamp.action = action;
-                                        actionTimestamp.timestamp = currentTime + devAction.delayTime * 60 + 2;
-                                        this->ActionTimestampList::push_back(actionTimestamp);
-                                    }
-                                    for (auto ruleAction : rule.ruleActions)
-                                    {
-                                        action.DeviceId = "";
-                                        action.ResourceName = "";
-                                        action.Value = "";
-                                        action.ActionRuleId = ruleAction.actionRuleId;
-
-                                        actionTimestamp.action = action;
-                                        actionTimestamp.timestamp = currentTime + ruleAction.delayTime * 60 + 2;
-                                        this->ActionTimestampList::push_back(actionTimestamp);
-                                    }
-                                }
+                                runRule = false;
+                                return;
                             }
                         }
+                        else if (deviceCondition.compareOperator == CompareOperator ::LESS)
+                        {
+                            if (stoi(resource.value) <= stoi(deviceCondition.value))
+                            {
+                                runRule = true;
+                            }
+                            else
+                            {
+                                runRule = false;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Rule OR
+        else
+        {
+            for (auto deviceCondition : rule.deviceConditions)
+            {
+                cout << deviceCondition.resourceName << " : " << deviceCondition.value << endl;
+                auto resources = Db::getDb()->listReading(deviceCondition.deviceId);
+                for (auto resource : resources)
+                {
+                    if (resource.resourceName == deviceCondition.resourceName)
+                    {
+                        if (deviceCondition.compareOperator == CompareOperator::GREATER)
+                        {
+                            if (stoi(resource.value) >= stoi(deviceCondition.value))
+                            {
+                                value_valid_min = true;
+                            }
+                            else
+                            {
+                                value_valid_min = false;
+                            }
+                        }
+                        else if (deviceCondition.compareOperator == CompareOperator::LESS)
+                        {
+                            if (stoi(resource.value) <= stoi(deviceCondition.value))
+                            {
+                                value_valid_max = true;
+                                runRule = true;
+                            }
+                            else
+                            {
+                                value_valid_max = false;
+                            }
+                        }
+                    }
+                }
+                if (value_valid_min && value_valid_max)
+                {
+                    runRule = true;
+                    break;
+                }
+                else
+                {
+                    runRule = false;
+                }
+            }
+        }
+        if (runRule)
+        {
+            ActionTimestamp actionTimestamp;
+            Action action;
+
+            action.RuleId = rule.id;
+            uint64_t currentTime = localTimestamp();
+
+            for (auto time : rule.timeInDayConditions)
+            {
+                time++;
+                for (auto devAction : rule.deviceActions)
+                {
+                    action.DeviceId = devAction.deviceId;
+                    action.ResourceName = devAction.resourceName;
+                    action.Value = devAction.value;
+                    action.ActionRuleId = "";
+
+                    actionTimestamp.action = action;
+                    actionTimestamp.timestamp = currentTime + devAction.delayTime * 60 + 2;
+                    this->ActionTimestampList::push_back(actionTimestamp);
+                }
+                for (auto ruleAction : rule.ruleActions)
+                {
+                    action.DeviceId = "";
+                    action.ResourceName = "";
+                    action.Value = "";
+                    action.ActionRuleId = ruleAction.actionRuleId;
+                    string err = "";
+                    auto ruleCheck = Db::getDb()->readRule(ruleAction.actionRuleId, err);
+                    if (err != "")
+                    {
+                        return;
+                    }
+
+                    if (ruleCheck.type == RuleType::SCENE)
+                    {
+                        Rule client;
+                        string rqi = genUuid();
+                        ActiveState activeState = ActiveState::ENABLED;
+                        string err;
+                        this->addOrRemoveActionTimestampListFromActiveRule(ruleAction.actionRuleId, activeState, err);
                     }
                 }
             }
@@ -631,14 +679,12 @@ namespace coreservices
                 {
                     break;
                 }
-                cout << "\033[0;32m actionTimestamp.timestamp :: " << actionTimestamp.timestamp << endl;
-                // TODO : check
+                cout << "\033[0;32mNext event after: \t\t " << actionTimestamp.timestamp - currentTime - 1 << "s" << endl;
                 if (actionTimestamp.timestamp <= currentTime)
                 {
                     this->ActionTimestampList::pop_back();
                     this->ActionQueue::push(actionTimestamp.action);
-                    cout << endl
-                         << "\033[1;34m GET FROM QUEUE :: " << actionTimestamp.timestamp << endl;
+                    cout << "\033[0;36mExecute time \t\t " << actionTimestamp.timestamp << endl;
                 }
                 else
                 {
@@ -647,10 +693,7 @@ namespace coreservices
 
                 usleep(5000);
             }
-            // cout << "                                                      "
-            //      << "\033[0;38m Time:: " << currentTime << endl;
             sleep(1);
-            // usleep(500000);
         }
     }
 
@@ -661,12 +704,9 @@ namespace coreservices
         {
             if (this->ActionQueue::pop(action))
             {
-                cout << endl
-                     << "\033[0;37m EXECUTE ACTION :: " << action.RuleId << endl;
+                cout << "\033[0;38mExecute rule :: " << action.RuleId << endl;
                 this->executeAction(action);
             }
-
-            // usleep(500000);
             sleep(1);
         }
     }

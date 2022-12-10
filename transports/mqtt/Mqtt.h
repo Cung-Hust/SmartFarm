@@ -98,3 +98,6 @@ public:
     bool publish(string topic, string message);
     bool getMessage(string topic, string &data);
 };
+
+string executeCmd(const string cmd);
+string getMacAddr(void);

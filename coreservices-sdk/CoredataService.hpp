@@ -8,17 +8,17 @@
 #pragma once
 
 #include "configurarion.hpp"
-#include "servers/Coredata.hpp"
+#include "../servers/Coredata.hpp"
 
-#include "common/constants.hpp"
-#include "common/utils.hpp"
-#include "dtos/requestes.hpp"
-#include "dtos/responses.hpp"
+#include "../common/constants.hpp"
+#include "../common/utils.hpp"
+#include "../dtos/requestes.hpp"
+#include "../dtos/responses.hpp"
 
-#include "controller/Controller.hpp"
-#include "database/Database.hpp"
+#include "../controller/Controller.hpp"
+#include "../database/Database.hpp"
 
-#include "logging/slog.h"
+#include "../logging/slog.h"
 
 namespace coreservices
 {

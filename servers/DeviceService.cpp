@@ -49,6 +49,14 @@ namespace server
         return "request {" + rqi + "} failed";
     };
 
+    string DeviceService::responseTestCommand(string message)
+    {
+        if (this->transport->publish("RD_RESPONSE", message))
+        {
+            return "";
+        };
+    };
+
     string DeviceService::responseDiscoveryCommand(string rqi, string error, model::Device device)
     {
         dto::HeaderResponse header = dto::createHeaderResponse(this->serverName, rqi, error);

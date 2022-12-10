@@ -8,6 +8,10 @@
 #include "Mqtt.h"
 #include <iostream>
 
+#include <memory>
+#include <stdexcept>
+#include <algorithm>
+
 Mqtt *Mqtt::gInstance = nullptr;
 Mqtt *Mqtt::gServerInstance = nullptr;
 
@@ -122,6 +126,7 @@ bool Mqtt::subscribe(string topic)
     if (answer != MOSQ_ERR_SUCCESS)
     {
         success = false;
+        exit(0);
     }
 
     this->dataStore.insert(std::make_pair(topic, new SafetyQueue(this->sizeQueue_)));
@@ -160,6 +165,7 @@ void Mqtt::on_disconnect(int rc)
 {
     cout << TAG << "Disconnection(" << rc << ")" << endl;
     reconnect();
+    exit(0);
 }
 
 void Mqtt::on_connect(int rc)
@@ -187,4 +193,30 @@ bool Mqtt::getMessage(string topic, string &data)
     {
         return it->second->pop(data);
     }
+}
+
+string executeCmd(const string cmd)
+{
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe)
+    {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    {
+        result += buffer.data();
+    }
+
+    return result;
+}
+
+string getMacAddr(void)
+{
+    std::string str = executeCmd("cat /sys/class/net/eth0/address");
+    str.erase(std::remove(str.begin(), str.end(), ':'), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+
+    return str;
 }

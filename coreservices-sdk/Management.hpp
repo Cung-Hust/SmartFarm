@@ -8,15 +8,15 @@
 #pragma once
 
 #include "configurarion.hpp"
-#include "servers/Management.hpp"
+#include "../servers/Management.hpp"
 
-#include "common/constants.hpp"
-#include "common/utils.hpp"
-#include "dtos/requestes.hpp"
-#include "dtos/responses.hpp"
+#include "../common/constants.hpp"
+#include "../common/utils.hpp"
+#include "../dtos/requestes.hpp"
+#include "../dtos/responses.hpp"
 
-#include "controller/Controller.hpp"
-#include "logging/slog.h"
+#include "../controller/Controller.hpp"
+#include "../logging/slog.h"
 
 namespace coreservices
 {

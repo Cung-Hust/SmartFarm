@@ -271,6 +271,34 @@ void enumFormString(const std::string &str, NotifyLevel &e)
         e = NotifyLevel::DANGER;
 }
 
+string enumToString(Mode e)
+{
+    switch (e)
+    {
+    case Mode::MODE_MANUAL:
+        return "MODE_MANUAL";
+    case Mode::MODE_SCHEDULE:
+        return "MODE_SCHEDULE";
+    case Mode::MODE_RULE:
+        return "MODE_RULE";
+    default:
+        return "MODE_MANUAL";
+    }
+
+    // never here
+    return "";
+}
+
+void enumFormString(const std::string &str, Mode &e)
+{
+    if (str == "MODE_MANUAL")
+        e = Mode::MODE_MANUAL;
+    else if (str == "MODE_SCHEDULE")
+        e = Mode::MODE_SCHEDULE;
+    else
+        e = Mode::MODE_RULE;
+}
+
 string enumToString(ValueType e)
 {
     switch (e)

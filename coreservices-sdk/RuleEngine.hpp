@@ -1,6 +1,6 @@
 #pragma once
 
-#include "clients/Command.hpp"
+#include "../clients/Command.hpp"
 
 #include <algorithm>
 #include <queue>
@@ -85,5 +85,6 @@ namespace coreservices
         void setStateCallback(string id, ActiveState state, string &err);
         void setTriggerCallback(string id, TriggerState state, string &err);
         void readingCallback(vector<model::Reading> readings, string &err);
+        void checkRule(string ruleId);
     };
 }

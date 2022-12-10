@@ -50,6 +50,9 @@ public:
     virtual vector<model::Rule> listRule(string type, string &error) = 0;
     virtual model::Rule readRule(string id, string &error) = 0;
 
+    // DeviceAction
+//    virtual vector<model::DeviceAction> listDeviceAction(string deviceId, string &error) = 0;
+
     // Notification
     virtual void addNotification(model::Notification notification, string &error) = 0;
     virtual void deleteNotification(string id, string &error) = 0;

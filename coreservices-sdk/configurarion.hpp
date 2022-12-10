@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <map>
 
 #include <fstream>
-#include "json/json.hpp"
+#include "../json/json.hpp"
 
 #define METATDATA_SERVICE_JSON_KEY "metadata"
 #define COMMAND_SERVICE_JSON_KEY "command"
@@ -52,6 +53,7 @@ namespace coreservices
                 this->resourceFile = transport.value("resourcefile", "");
                 this->requestServiceTopic = transport.value("requesttopic", "");
                 this->responseServiceTopic = transport.value("responsetopic", "");
+                cout << "this->responseServiceTopic : -> " << this->responseServiceTopic << endl;
             }
         }
 

@@ -5,12 +5,12 @@
  *      Author: rd
  */
 
-#include "servers/ExDis.hpp"
-#include "common/utils.hpp"
-#include "common/constants.hpp"
+#include "../servers/ExDis.hpp"
+#include "../common/utils.hpp"
+#include "../common/constants.hpp"
 #include "GetResponseHandler.hpp"
-#include "database/Database.hpp"
-#include "transports/Transports.hpp"
+#include "../database/Database.hpp"
+#include "../transports/Transports.hpp"
 
 #include <stdlib.h>
 #include <ctime>
@@ -129,7 +129,7 @@ void GetResponseHandler::handler(string data)
 
     if (cnv_typeSensor == 0)
     {
-        devName = "CB Độ ẩm " + device.protocols["MAC"];
+        devName = "CB Nhiệt độ - Độ ẩm " + device.protocols["MAC"];
         json j_device_ = {{
             {"ID", deviceId},
             {"Type", 0},

@@ -6,7 +6,7 @@
  */
 
 #include "DeviceService.hpp"
-#include "database/Database.hpp"
+#include "../database/Database.hpp"
 
 #include <iostream>
 #include <thread>

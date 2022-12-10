@@ -1,4 +1,3 @@
-
 // Op of Message Request
 #define OP_DEVICE_ADD "device:add"
 #define OP_DEVICE_UPDATE "device:update"
@@ -46,3 +45,16 @@
 #define OP_GATEWAY_PING "gateway:ping"
 
 #define INVALID_MESSAGE_ERROR "Invalid message"
+
+// Test manufactoring
+
+#define OP_START_TEST "Start"
+#define OP_DEVICE_LORA_DISCOVERY_TEST "device:lora_scan"
+#define OP_DEVICE_BLE_SCAN_TEST "device:ble_scan"
+#define OP_DEVICE_BLE_STOP_TEST "device:ble_stop"
+#define OP_DEVICE_MODBUS_CONTROL_TEST "device:modbus_status"
+#define OP_RELAY_CONTROL_TEST "relay:control"
+#define OP_4G_TEST "4g:status"
+#define OP_LAN_TEST "lan:status"
+#define OP_RTC_TEST "rtc:status"
+#define OP_DIMMING_TEST "dimming:control"

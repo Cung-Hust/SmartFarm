@@ -42,7 +42,7 @@ namespace coreservices
     {
         string startMes = this->name + ": started";
         slog_print(SLOG_INFO, 1, startMes.c_str());
-        this->requester.server(isDetach);
+        this->requester.server(true);
         this->requester_1.server(isDetach);
     }
 
@@ -392,7 +392,7 @@ namespace coreservices
         }
         ActiveState activeState = req.activestate;
 
-        // cout << "ActiveState activeState = req.activestate :: " << activeState << endl;
+        cout << "ActiveState activeState = req.activestate :: " << activeState << endl;
 
         Db::getDb()->updateRuleActiveState(req.id, activeState, err);
         if (err != "")
@@ -492,9 +492,6 @@ namespace coreservices
 
     void RuleService::addReadingsHandler(dto::HeaderRequest header, string message)
     {
-        cout << "Hello, Reading!" << endl;
-        // cout << "ID: Reading! - " << message << endl
-        //      << endl;
         string responseTopic = this->getReponseTopic(header.client);
 
         dto::AddReadingsRequest req;
@@ -506,13 +503,11 @@ namespace coreservices
         {
             string err = INVALID_MESSAGE_ERROR;
             err = this->name + ": " + err;
-            // cout << "RuleService::addReadingsHandler :: --> 1 --> " << err.c_str() << endl;
             slog_print(SLOG_ERROR, 1, err.c_str());
             err = this->server.response(responseTopic, req.header.rqi, err);
             if (err != "")
             {
                 err = this->name + ": " + err;
-                // cout << "RuleService::addReadingsHandler :: --> 2 --> " << err.c_str() << endl;
                 slog_print(SLOG_ERROR, 1, err.c_str());
             }
 

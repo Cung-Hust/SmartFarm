@@ -5,11 +5,11 @@
  *      Author: rd
  */
 
-#include "servers/ExDis.hpp"
-#include "common/utils.hpp"
+#include "../servers/ExDis.hpp"
+#include "../common/utils.hpp"
 #include "GetInfoHandler.hpp"
-#include "database/Database.hpp"
-#include "transports/Transports.hpp"
+#include "../database/Database.hpp"
+#include "../transports/Transports.hpp"
 
 #include <stdlib.h>
 #include <ctime>
@@ -80,8 +80,7 @@ void GetInfoHandler::handler(string data)
     }
 
     string profileName = device.profileName;
-    cout << "profileName: "
-         << "--> " << profileName << " <--" << endl;
+    cout << "profileName: " << "--> " << profileName << " <--" << endl;
     if (profileName == "Relay")
     {
         int relayState;
@@ -191,7 +190,33 @@ void GetInfoHandler::handler(string data)
               {"DateTime", time(0)}}},
             {"Sensor", sensors}};
     }
+    else if(profileName == "Gateway")
+    {
+        int mode;
+        json gateways;
 
+        for (auto &reading : readings)
+        {
+            if (reading.resourceName == "Mode")
+            {
+                mode = reading.value == "true" ? 1 : 0;
+                json gateway = {
+                    {"ID", "Gateway"},
+                    {"Type", 1},
+                    {"Pull", mode},
+                };
+                gateways.push_back(gateway);
+            }
+        }
+        msgToCloud_j = {
+            {"Head",
+             {{"IDMessage", rqi},
+              {"TypeMessage", 0},
+              {"FormData", 1},
+              {"IDGateway", getMacGW()},
+              {"DateTime", time(0)}}},
+            {"Gateway", gateways}};
+    }
     cout << "Msg send to cloud ... " << msgToCloud_j << endl;
     json devList;
     std::string msgToCloud_str = msgToCloud_j.dump();

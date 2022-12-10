@@ -57,7 +57,7 @@ void RequestController::server_()
                 callback(req.header, message);
             }
         };
-        usleep(10000);
+        usleep(5000);
         // usleep(randint);
         // sleep(1);
     }
@@ -114,7 +114,7 @@ void ResponseController::server_()
                 this->callback(res.header, message);
             }
         };
-        usleep(10000);
+        usleep(5000);
         // sleep(1);
     }
 }

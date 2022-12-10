@@ -10,7 +10,7 @@
 #include <map>
 
 #include <fstream>
-#include "json/json.hpp"
+#include "../json/json.hpp"
 
 #define CONFIG_JSON_KEY "service"
 #define DEFAULT_CLIENT ""
@@ -25,6 +25,7 @@ namespace deviceservice
         string name;
         string requestServiceTopic;
         string responseServiceTopic;
+        string testServiceTopic;
         uint64_t queueSize;
         map<string, string> requestTopicMap;
         map<string, string> responseTopicMap;
@@ -46,6 +47,7 @@ namespace deviceservice
                 this->queueSize = serviceCfg.value("maxqueue", 0);
                 this->requestServiceTopic = serviceCfg.value("requesttopic", "");
                 this->responseServiceTopic = serviceCfg.value("responsetopic", "");
+                this->testServiceTopic = serviceCfg.value("testtopic", "");
             }
         }
 

@@ -8,16 +8,16 @@
 #pragma once
 
 #include "configurarion.hpp"
-#include "servers/DeviceService.hpp"
+#include "../servers/DeviceService.hpp"
 
-#include "common/constants.hpp"
-#include "common/utils.hpp"
-#include "dtos/requestes.hpp"
-#include "dtos/responses.hpp"
+#include "../common/constants.hpp"
+#include "../common/utils.hpp"
+#include "../dtos/requestes.hpp"
+#include "../dtos/responses.hpp"
 
-#include "controller/Controller.hpp"
-#include "database/Database.hpp"
-#include "logging/slog.h"
+#include "../controller/Controller.hpp"
+#include "../database/Database.hpp"
+#include "../logging/slog.h"
 
 #include "ReadingQueue.hpp"
 #include "IDriver.hpp"
@@ -30,6 +30,7 @@ namespace deviceservice
         SLogConfig slgCfg;
         server::DeviceService server;
         RequestController requester;
+        RequestController tester;
         IDriver *driver;
         ReadingQueue *rdqueue;
 

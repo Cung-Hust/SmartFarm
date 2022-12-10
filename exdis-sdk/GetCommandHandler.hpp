@@ -8,9 +8,9 @@
 #pragma once
 
 #include <iostream>
-#include "json/json.hpp"
-#include "clients/Command.hpp"
-#include "clients/Rule.hpp"
+#include "../json/json.hpp"
+#include "../clients/Command.hpp"
+#include "../clients/Rule.hpp"
 
 using namespace std;
 using nlohmann::json;
@@ -21,6 +21,8 @@ using nlohmann::json;
 #define FORM_DATA_RULE 3
 #define FORM_DATA_SYNC 4
 #define FORM_DATA_RESPONSE 5
+#define FORM_DATA_DELETE_GATEWAY 6
+#define FORM_DATA_OTA_GATEWAY 7
 
 #define TYPE_ACTION_UPDATE 0
 #define TYPE_ACTION_CREATE 1
@@ -72,6 +74,7 @@ public:
     void handler_rule_update();
     void handler_sync();
     void handler_response();
+    void handler_delete_gateway();
     void handler_error();
     void handler_rule_schedule();
     void handler_rule_scene();

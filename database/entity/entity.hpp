@@ -124,6 +124,13 @@ namespace entity
         string notifyContent;
     };
 
+    struct Gateway
+    {
+        string id;
+        string macAddress;
+        uint8_t mode;
+    };
+
     struct Notification
     {
         string id;
@@ -161,6 +168,8 @@ namespace entity
     model::RuleAction toModel(RuleAction et);
     Rule fromModel(model::Rule md);
     model::Rule toModel(Rule et);
+    Gateway fromModel(model::Gateway md);
+    model::Gateway toModel(Gateway et);
     Notification fromModel(string id, model::Notification md);
     model::Notification toModel(Notification et);
 }

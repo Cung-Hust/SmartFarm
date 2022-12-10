@@ -338,6 +338,25 @@ namespace entity
         return md;
     };
 
+    Gateway fromModel(model::Gateway md)
+    {
+        Gateway et;
+        et.id = md.id;
+        et.macAddress = md.macAddress;
+        et.mode = (int)md.mode;
+
+        return et;
+    };
+
+    model::Gateway toModel(Gateway et)
+    {
+        model::Gateway md;
+        md.macAddress = et.macAddress;
+        md.mode = (Mode)et.mode;
+
+        return md;
+    };
+
     Notification fromModel(string id, model::Notification md)
     {
         Notification et;

@@ -11,12 +11,13 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "clients/Metadata.hpp"
-#include "servers/ExDis.hpp"
-#include "common/utils.hpp"
-#include "database/Database.hpp"
+#include "../clients/Metadata.hpp"
+#include "../servers/ExDis.hpp"
+#include "../common/utils.hpp"
+#include "../database/Database.hpp"
 #include "GetCommandHandler.hpp"
-#include "transports/Transports.hpp"
+#include "../logging/slog.h"
+#include "../transports/Transports.hpp"
 
 GetCommandHandler::GetCommandHandler(){};
 
@@ -52,10 +53,9 @@ void GetCommandHandler::run(string requestTopic)
 void GetCommandHandler::handler(string data)
 {
     this->cmd = data;
-    cout << "Running command " << data << endl;
     server::ExDis server("ExDis");
     json command = json::parse(data);
-    cout << "\033[0;36m\t Command:  " << command << endl;
+    slog_print(SLOG_INFO, 1, "\033[1;37mData from cloud: %s", data.c_str());
     int formData = command["Head"]["FormData"];
     string rspTopic = getMacGW() + "gateway";
     if (formData == 1000)
@@ -97,6 +97,12 @@ void GetCommandHandler::handler(string data)
     case FORM_DATA_RESPONSE:
         this->handler_response();
         break;
+    case FORM_DATA_DELETE_GATEWAY:
+        this->handler_delete_gateway();
+        break;
+    // case FORM_DATA_OTA_GATEWAY:
+    //     this->handler_ota_gateway();
+    //     break;
     default:
         this->handler_error();
         break;
@@ -232,7 +238,7 @@ void GetCommandHandler::handler_device_create()
     idMessage = command["Head"]["IDMessage"];
     dev.id = command["Device"][0]["ID"];
     dev.name = command["Device"][0]["Name"];
-    dev.type = command["Device"][0]["Type"] == 1 ? DeviceType::ACTUATOR : DeviceType::SENSOR;
+    dev.type = command["Device"][0]["Type"] == 0 ? DeviceType::SENSOR : DeviceType::ACTUATOR;
     dev.created = time(0);
     dev.modified = time(0);
     dev.adminState = AdminState::UNLOCKED;
@@ -243,7 +249,6 @@ void GetCommandHandler::handler_device_create()
     map<string, string> mapTest;
     mapTest["PIN"] = to_string(command["Device"][0]["Pin"]);
     mapTest["ID"] = command["Device"][0]["ID"];
-    // ToDo: Fixed, change by server
     mapTest["Address"] = mapTest["PIN"];
     // end
     dev.protocols = mapTest;
@@ -256,6 +261,7 @@ void GetCommandHandler::handler_device_update()
     uint8_t typeDev = command["Device"][0]["Type"];
     string uuid = genUuid();
     Metadata client("exdis", "rd/metadata/request");
+    Command setCommand("exdis", "rd/command/request");
     model::Device dev;
 
     dev.id = command["Device"][0]["ID"];
@@ -263,11 +269,10 @@ void GetCommandHandler::handler_device_update()
     dev.modified = localTimestamp();
     string err;
     auto device = Db::getDb()->readDevice(dev.id, err);
-    cout << device.id << endl;
-    cout << device.created << endl;
+    map<string, string> resources;
     if (err != "")
     {
-        cout << "err..." << err << std::endl;
+        slog_print(SLOG_ERROR, 1, "%s", err.c_str());
         return;
     }
     dev.protocols = device.protocols;
@@ -280,6 +285,11 @@ void GetCommandHandler::handler_device_update()
         dev.protocols["Calib_3"] = to_string(command["Device"][0]["Param_c"]);
         dev.protocols["ReportSensorTime"] = to_string(command["Device"][0]["Delay"]);
         dev.profileName = "Lora";
+        // Set ReportSensorTime
+        resources["ReportSensorTime"] = dev.protocols["ReportSensorTime"];
+        map<string, string> options;
+        options["response"] = "true";
+        setCommand.issueSetCommand(uuid, dev.id, resources, options);
     }
     else
     {
@@ -307,6 +317,14 @@ void GetCommandHandler::handler_sync()
 
 void GetCommandHandler::handler_response()
 {
+}
+
+void GetCommandHandler::handler_delete_gateway()
+{
+    string delete_command = "rm db.sqlite";
+    osExec(delete_command);
+    string reboot_command = "reboot -f";
+    osExec(reboot_command);
 }
 
 void GetCommandHandler::handler_error()
@@ -370,6 +388,12 @@ void GetCommandHandler::handler_rule_native()
     }
 }
 
+/**
+ * @brief
+ *
+ * @param client
+ * @param command
+ */
 void handler_rule_schedule_create(Rule client, json command)
 {
     string rqi = genUuid();
@@ -385,10 +409,7 @@ void handler_rule_schedule_create(Rule client, json command)
     rule.triggerState = TriggerState::OFF;
     rule.startTime = 0;
     rule.endTime = END_TIME;
-    uint32_t startInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStart"];
-    rule.startInDayTime = startInDayTime;
-    cout << endl
-         << "rule.startInDayTime :: :: :: " << rule.startInDayTime << endl;
+    rule.startInDayTime = 0;
     rule.endInDayTime = 86400;
     vector<string> repeatDays;
     if (command["Rule"][0]["Input"]["Loop"]["Monday"] == true)
@@ -426,7 +447,14 @@ void handler_rule_schedule_create(Rule client, json command)
     }
     rule.repeatDays = repeatDays;
     vector<uint32_t> timeInDayConditions;
-    timeInDayConditions.push_back(startInDayTime);
+    auto timestamps = command["Rule"][0]["Input"]["Schedule"];
+    for (auto time : timestamps)
+    {
+        cout << "Time start: " << time["TimeStart"] << endl;
+        cout << "Time stop: " << time["TimeStop"] << endl;
+        timeInDayConditions.push_back(time["TimeStart"]);
+        timeInDayConditions.push_back(time["TimeStop"]);
+    }
     rule.timeInDayConditions = timeInDayConditions;
     rule.deviceConditions = vector<model::DeviceCondition>();
     rule.ruleConditions = vector<model::RuleCondition>();
@@ -445,10 +473,9 @@ void handler_rule_schedule_create(Rule client, json command)
     rule.ruleActions = vector<model::RuleAction>();
     rule.enableNotify = true;
     rule.notifyLevel = NORMAL;
-    rule.notifyContent = "RULE SCHEDULE CREATED";
+    rule.notifyContent = "Rule schedule create!";
     string resp = client.addRule(rqi, rule);
 }
-
 void handler_rule_schedule_update(Rule client, json command)
 {
     string rqi = genUuid();
@@ -466,11 +493,8 @@ void handler_rule_schedule_update(Rule client, json command)
         rule.triggerState = TriggerState::OFF;
         rule.startTime = 0;
         rule.endTime = END_TIME;
-        uint32_t startInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStart"];
-        rule.startInDayTime = startInDayTime;
+        rule.startInDayTime = 0;
         rule.endInDayTime = 86400;
-        rule.repeatDays = vector<string>();
-        rule.conditionLogic = AND;
         vector<string> repeatDays;
         if (command["Rule"][0]["Input"]["Loop"]["Monday"] == true)
         {
@@ -507,12 +531,17 @@ void handler_rule_schedule_update(Rule client, json command)
         }
         rule.repeatDays = repeatDays;
         vector<uint32_t> timeInDayConditions;
-        timeInDayConditions.push_back(rule.startInDayTime);
+        auto timestamps = command["Rule"][0]["Input"]["Schedule"];
+        for (auto time : timestamps)
+        {
+            cout << "Time start: " << time["TimeStart"] << endl;
+            cout << "Time stop: " << time["TimeStop"] << endl;
+            timeInDayConditions.push_back(time["TimeStart"]);
+            timeInDayConditions.push_back(time["TimeStop"]);
+        }
         rule.timeInDayConditions = timeInDayConditions;
         rule.deviceConditions = vector<model::DeviceCondition>();
         rule.ruleConditions = vector<model::RuleCondition>();
-
-        // OUTPUT
         vector<model::DeviceAction> deviceActions;
         json outputDevs = command["Rule"][0]["Execute"];
         model::DeviceAction devAction;
@@ -525,11 +554,10 @@ void handler_rule_schedule_update(Rule client, json command)
             deviceActions.push_back(devAction);
         }
         rule.deviceActions = deviceActions;
-
         rule.ruleActions = vector<model::RuleAction>();
         rule.enableNotify = true;
         rule.notifyLevel = NORMAL;
-        rule.notifyContent = "";
+        rule.notifyContent = "Rule schedule update!";
         client.updateRule(rqi, rule);
     }
     else
@@ -556,7 +584,7 @@ void handler_rule_scene_create(Rule client, json command)
     rule.triggerState = TriggerState::OFF;
     rule.startTime = 0;
     rule.endTime = END_TIME;
-    rule.startInDayTime = localTimestamp() - (localTimestamp() / 86400) * 86400 + 2;
+    rule.startInDayTime = localTimestamp();
     rule.endInDayTime = 86400;
     vector<string> repeatDays;
     string dayInWeek = getDayInWeek();
@@ -575,8 +603,18 @@ void handler_rule_scene_create(Rule client, json command)
     {
         devAction.deviceId = elem["ID"];
         devAction.delayTime = elem["Delay"];
-        devAction.resourceName = "OnDuring";
-        devAction.value = to_string(elem["During"]);
+
+        uint8_t typeDuring = elem["During"];
+        if (typeDuring == 0)
+        {
+            devAction.resourceName = "OnOff";
+            devAction.value = elem["Pull"] == 1 ? "true" : "false";
+        }
+        else
+        {
+            devAction.resourceName = "OnDuring";
+            devAction.value = to_string(elem["During"]);
+        }
         deviceActions.push_back(devAction);
     }
     rule.deviceActions = deviceActions;
@@ -584,6 +622,7 @@ void handler_rule_scene_create(Rule client, json command)
     rule.enableNotify = true;
     rule.notifyLevel = NORMAL;
     rule.notifyContent = "";
+    rule.startInDayTime = localTimestamp() - (localTimestamp() / 86400) * 86400 + 2;
     client.addRule(rqi, rule);
 }
 
@@ -594,7 +633,6 @@ void handler_rule_scene_update(Rule client, json command)
 
     if (command["Rule"][0].contains("Execute"))
     {
-
         string idMessage = command["Head"]["IDMessage"];
         rule.id = command["Rule"][0]["ID"];
         rule.name = command["Rule"][0]["Name"];
@@ -605,7 +643,7 @@ void handler_rule_scene_update(Rule client, json command)
         rule.triggerState = TriggerState::OFF;
         rule.startTime = 0;
         rule.endTime = END_TIME;
-        rule.startInDayTime = localTimestamp() - (localTimestamp() / 86400) * 86400 + 2;
+        rule.startInDayTime = localTimestamp();
         rule.endInDayTime = 86400;
         vector<string> repeatDays;
         string dayInWeek = getDayInWeek();
@@ -617,34 +655,39 @@ void handler_rule_scene_update(Rule client, json command)
         rule.timeInDayConditions = timeInDayConditions;
         rule.deviceConditions = vector<model::DeviceCondition>();
         rule.ruleConditions = vector<model::RuleCondition>();
+        vector<model::DeviceAction> deviceActions;
+        json outputDevs = command["Rule"][0]["Execute"];
+        model::DeviceAction devAction;
+        for (auto &elem : outputDevs)
         {
-            vector<model::DeviceAction> deviceActions;
-            json outputDevs = command["Rule"][0]["Execute"];
-            model::DeviceAction devAction;
-            for (auto &elem : outputDevs)
+            devAction.deviceId = elem["ID"];
+            devAction.delayTime = elem["Delay"];
+            uint8_t typeDuring = elem["During"];
+            if (typeDuring == 0)
             {
-                devAction.deviceId = elem["ID"];
-                devAction.delayTime = elem["Delay"];
+                devAction.resourceName = "OnOff";
+                devAction.value = elem["Pull"] == 1 ? "true" : "false";
+            }
+            else
+            {
                 devAction.resourceName = "OnDuring";
                 devAction.value = to_string(elem["During"]);
-                deviceActions.push_back(devAction);
             }
-            rule.deviceActions = deviceActions;
+            deviceActions.push_back(devAction);
         }
-
+        rule.deviceActions = deviceActions;
         rule.ruleActions = vector<model::RuleAction>();
         rule.enableNotify = true;
         rule.notifyLevel = NORMAL;
         rule.notifyContent = "";
+        rule.startInDayTime = localTimestamp() - (localTimestamp() / 86400) * 86400 + 2;
         client.updateRule(rqi, rule);
     }
     else
     {
         string ruleId = command["Rule"][0]["ID"];
         int activeValue = command["Rule"][0]["Active"];
-        cout << "activeValue :: " << activeValue << endl;
         ActiveState activeState = activeValue == 0 ? ActiveState::DISABLED : ActiveState::ENABLED;
-        cout << "ActiveState activeState :: " << activeState << endl;
         client.updateStateRule(rqi, ruleId, activeState);
     }
 }
@@ -669,15 +712,15 @@ void handler_rule_native_create(Rule client, json command)
     rule.triggerState = TriggerState::OFF;
     rule.startTime = 0;
     rule.endTime = END_TIME;
-    if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStart"))
+    if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStart") && command["Rule"][0]["Input"]["Schedule"]["TimeStart"] != "ni")
     {
         rule.startInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStart"];
     }
     else
     {
-        rule.startInDayTime = time(0);
+        rule.startInDayTime = localTimestamp() - localTimestamp() / 86400 * 86400;
     }
-    if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStop"))
+    if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStop") && command["Rule"][0]["Input"]["Schedule"]["TimeStop"] != "ni")
     {
         rule.endInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStop"];
     }
@@ -727,7 +770,6 @@ void handler_rule_native_create(Rule client, json command)
     {
         deviceCondition.deviceId = elem["ID"];
         uint8_t typeSensor = elem["TypeSensor"];
-        cout << "typeSensor" << typeSensor << endl;
         switch (typeSensor)
         {
         case 0:
@@ -756,7 +798,7 @@ void handler_rule_native_create(Rule client, json command)
             break;
         case 6:
             deviceCondition.resourceName = "PH";
-            maxValue = "1000";
+            maxValue = "20";
             break;
         }
         deviceCondition.compareOperator = CompareOperator::GREATER;
@@ -779,8 +821,17 @@ void handler_rule_native_create(Rule client, json command)
         {
             devAction.deviceId = elem["ID"];
             devAction.delayTime = elem["Delay"];
-            devAction.resourceName = "OnDuring";
-            devAction.value = to_string(elem["During"]);
+            uint8_t typeDuring = elem["During"];
+            if (typeDuring == 0)
+            {
+                devAction.resourceName = "OnOff";
+                devAction.value = elem["Pull"] == 1 ? "true" : "false";
+            }
+            else
+            {
+                devAction.resourceName = "OnDuring";
+                devAction.value = to_string(elem["During"]);
+            }
             deviceActions.push_back(devAction);
         }
         else
@@ -821,17 +872,15 @@ void handler_rule_native_update(Rule client, json command)
         rule.triggerState = TriggerState::OFF;
         rule.startTime = 0;
         rule.endTime = END_TIME;
-        // rule.startInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStart"];
-        // rule.endInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStop"];
-        if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStart"))
+        if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStart") && command["Rule"][0]["Input"]["Schedule"]["TimeStart"] != "ni")
         {
             rule.startInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStart"];
         }
         else
         {
-            rule.startInDayTime = time(0);
+            rule.startInDayTime = localTimestamp() - localTimestamp() / 86400 * 86400;
         }
-        if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStop"))
+        if (command["Rule"][0]["Input"]["Schedule"].contains("TimeStop") && command["Rule"][0]["Input"]["Schedule"]["TimeStop"] != "ni")
         {
             rule.endInDayTime = command["Rule"][0]["Input"]["Schedule"]["TimeStop"];
         }
@@ -882,7 +931,6 @@ void handler_rule_native_update(Rule client, json command)
         {
             deviceCondition.deviceId = elem["ID"];
             uint8_t typeSensor = elem["TypeSensor"];
-            cout << "typeSensor" << typeSensor << endl;
             switch (typeSensor)
             {
             case 0:
@@ -907,11 +955,11 @@ void handler_rule_native_update(Rule client, json command)
                 break;
             case 5:
                 deviceCondition.resourceName = "EC";
-                maxValue = "1000";
+                maxValue = "20";
                 break;
             case 6:
                 deviceCondition.resourceName = "PH";
-                maxValue = "1000";
+                maxValue = "10";
                 break;
             }
             deviceCondition.compareOperator = CompareOperator::GREATER;
@@ -934,8 +982,17 @@ void handler_rule_native_update(Rule client, json command)
             {
                 devAction.deviceId = elem["ID"];
                 devAction.delayTime = elem["Delay"];
-                devAction.resourceName = "OnDuring";
-                devAction.value = elem["Pull"] == 0 ? "0" : to_string(elem["During"]);
+                uint8_t typeDuring = elem["During"];
+                if (typeDuring == 0)
+                {
+                    devAction.resourceName = "OnOff";
+                    devAction.value = elem["Pull"] == 1 ? "true" : "false";
+                }
+                else
+                {
+                    devAction.resourceName = "OnDuring";
+                    devAction.value = to_string(elem["During"]);
+                }
                 deviceActions.push_back(devAction);
             }
             else

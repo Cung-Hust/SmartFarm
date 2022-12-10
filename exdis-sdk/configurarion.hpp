@@ -12,8 +12,8 @@
 
 #include <fstream>
 #include <iostream>
-#include "json/json.hpp"
-#include "common/utils.hpp"
+#include "../json/json.hpp"
+#include "../common/utils.hpp"
 
 #define METATDATA_SERVICE_JSON_KEY "metadata"
 #define COMMAND_SERVICE_JSON_KEY "command"

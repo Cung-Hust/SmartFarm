@@ -6,7 +6,7 @@
  */
 
 #include "ExdisService.hpp"
-#include "coreservices-sdk/Management.hpp"
+#include "../coreservices-sdk/Management.hpp"
 
 #include <iostream>
 #include <unistd.h>

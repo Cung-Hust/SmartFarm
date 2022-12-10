@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include "models/models.hpp"
-#include "clients/Command.hpp"
+#include "../models/models.hpp"
+#include "../clients/Command.hpp"
 
 namespace coreservices
 {

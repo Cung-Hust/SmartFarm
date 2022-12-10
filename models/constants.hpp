@@ -91,6 +91,13 @@ enum ValueType
     STRING  // string: "string"
 };
 
+enum Mode
+{
+    MODE_MANUAL,  // string: "MANUAL"
+    MODE_SCHEDULE, // string: "SCHEDULE"
+    MODE_RULE   // string: "RULE"
+};
+
 string enumToString(DeviceType e);
 void enumFormString(const std::string &str, DeviceType &e);
 string enumToString(AdminState e);
@@ -111,6 +118,8 @@ string enumToString(CompareOperator e);
 void enumFormString(const std::string &str, CompareOperator &e);
 string enumToString(NotifyLevel e);
 void enumFormString(const std::string &str, NotifyLevel &e);
+string enumToString(Mode e);
+void enumFormString(const std::string &str, Mode &e);
 string enumToString(ValueType e);
 void enumFormString(const std::string &str, ValueType &e);
 

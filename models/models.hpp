@@ -132,4 +132,11 @@ namespace model
         NotifyLevel level;
         string content;
     };
+
+    struct Gateway
+    {
+        string id;
+        string macAddress;
+        uint8_t mode;
+    };
 }

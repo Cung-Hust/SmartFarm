@@ -49,7 +49,8 @@ string Rule::updateRule(string &rqi, model::Rule rule)
     request.rule = dtoRule;
 
     string requestStr = serialize<dto::UpdateRuleRequest>(request);
-    deleteUpdateRule(dtoRule);
+    dto::deleteUpdateRule(dtoRule);
+    // dto::DeleteRule(dtoRule);
     if (this->transport->publish(this->resquestTopic, requestStr))
     {
         return "";

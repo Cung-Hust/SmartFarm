@@ -6,6 +6,7 @@
 
 #include <string>
 #include <stdint.h>
+#include <unistd.h>
 
 using namespace entity;
 using namespace sqlite_orm;
@@ -101,6 +102,7 @@ static auto initStorage(const std::string &path)
                                    make_column("value", &DeviceAction::value),
                                    foreign_key(&DeviceAction::ruleId).references(&Rule::id).on_delete.cascade(),
                                    foreign_key(&DeviceAction::deviceId).references(&Device::id).on_delete.cascade(),
+                                   //    foreign_key(&DeviceAction::resourceName).references(&DeviceResource::name).on_delete.cascade(),
                                    primary_key(&DeviceAction::ruleId, &DeviceAction::deviceId)),
                         make_table("RuleAction",
                                    make_column("ruleId", &RuleAction::ruleId),
@@ -339,6 +341,7 @@ vector<model::Device> Sqlite::listDevice(string profileName, string serviceName,
 
 model::Device Sqlite::readDevice(string id, string &error)
 {
+    const std::lock_guard<std::mutex> lock(this->mutex_);
     model::Device md;
     try
     {
@@ -681,6 +684,8 @@ void Sqlite::validAndAddReading(vector<model::Reading> &readings, string &error)
 
 vector<model::Reading> Sqlite::listReading(string id)
 {
+    usleep(1000);
+    const std::lock_guard<std::mutex> lock(this->mutex_);
     vector<model::Reading> result;
 
     if (id == "")
@@ -706,9 +711,8 @@ vector<model::Reading> Sqlite::listReading(string id)
 // Rule
 void Sqlite::addRule(model::Rule rule, string &error)
 {
-    Rule er = fromModel(rule);
-
     const std::lock_guard<std::mutex> lock(this->mutex_);
+    Rule er = fromModel(rule);
 
     try
     {
@@ -808,9 +812,8 @@ void Sqlite::addRule(model::Rule rule, string &error)
 
 void Sqlite::updateRule(model::Rule rule, string &error)
 {
-    Rule ed = fromModel(rule);
-
     const std::lock_guard<std::mutex> lock(this->mutex_);
+    Rule ed = fromModel(rule);
 
     try
     {
@@ -1216,3 +1219,58 @@ vector<model::Notification> Sqlite::listNotification(void)
 
     return mns;
 };
+
+// Gateway
+// void Sqlite::addGateway(model::Gateway gateway, string &error)
+// {
+//     Gateway en = fromModel(gateway);
+
+//     const std::lock_guard<std::mutex> lock(this->mutex_);
+//     try
+//     {
+//         gStorage->replace(en);
+//     }
+//     catch (const std::system_error &e)
+//     {
+//         error = e.what();
+//     }
+//     catch (...)
+//     {
+//         error = "unknown exeption";
+//     }
+
+//     return;
+// };
+
+// void Sqlite::updateGatewayMode(Mode mode, string &error)
+// {
+//     const std::lock_guard<std::mutex> lock(this->mutex_);
+//     // cout << "Sqlite::updateRuleActiveState : " << id << " -> state : " << state << endl;
+//     try
+//     {
+//         gStorage->update_all(sqlite_orm::set(c(&Mode::mode) = (int)mode), where(c(&Gateway::id) == "1"));
+//     }
+//     catch (const std::system_error &e)
+//     {
+//         error = e.what();
+//         return;
+//     }
+//     catch (...)
+//     {
+//         error = "unknown exeption";
+//         return;
+//     }
+// };
+
+//vector<model::DeviceAction> Sqlite::listDeviceAction(string deviceId, string &error)
+//{
+//    bool isQueryType = (deviceId != "");
+//    vector<model::DeviceAction> mds;
+//    for (auto &daRecord : gStorage->iterate<DeviceAction>(where(c(&DeviceAction::deviceId) == deviceId)))
+//    {
+//        model::DeviceAction mda = toModel(daRecord);
+//        mds.push_back(mda);
+//    }
+//
+//    return mds;
+//}

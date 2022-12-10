@@ -61,6 +61,12 @@ public:
   void deleteNotification(string id, string &error);
   vector<model::Notification> listNotification(void);
 
+  // Gateway
+  // void addGateway(model::Gateway gateway, string &error);
+  // void updateGatewayMode(Mode mode, string &error);
+
+  // vector<model::DeviceAction> listDeviceAction(string deviceId, string &error);
+
 private:
   static Sqlite *gInstance;
   std::mutex mutex_;

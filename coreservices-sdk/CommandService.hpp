@@ -1,4 +1,4 @@
-/*
+ /*
  * CommandService.hpp
  *
  *  Created on: Aug 2, 2022
@@ -8,17 +8,17 @@
 #pragma once
 
 #include "configurarion.hpp"
-#include "servers/Command.hpp"
-#include "clients/Command.hpp"
+#include "../servers/Command.hpp"
+#include "../clients/Command.hpp"
 
-#include "common/constants.hpp"
-#include "common/utils.hpp"
-#include "dtos/requestes.hpp"
-#include "dtos/responses.hpp"
+#include "../common/constants.hpp"
+#include "../common/utils.hpp"
+#include "../dtos/requestes.hpp"
+#include "../dtos/responses.hpp"
 
-#include "controller/Controller.hpp"
-#include "database/Database.hpp"
-#include "logging/slog.h"
+#include "../controller/Controller.hpp"
+#include "../database/Database.hpp"
+#include "../logging/slog.h"
 
 #include <ctime>
 #include <mutex>

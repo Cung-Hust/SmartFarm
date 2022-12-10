@@ -8,7 +8,7 @@
 #include <queue>
 #include <mutex>
 
-#include "models/models.hpp"
+#include "../models/models.hpp"
 
 #define READING_QUEUE_DEFAULT_SIZE 100
 

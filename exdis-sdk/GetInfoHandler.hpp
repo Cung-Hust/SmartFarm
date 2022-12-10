@@ -8,8 +8,8 @@
 #pragma once
 
 #include <iostream>
-#include "json/json.hpp"
-#include "clients/Rule.hpp"
+#include "../json/json.hpp"
+#include "../clients/Rule.hpp"
 
 using namespace std;
 using nlohmann::json;

@@ -2,8 +2,8 @@
 
 #include <string>
 #include <map>
-#include "json/json.hpp"
-#include "models/models.hpp"
+#include "../json/json.hpp"
+#include "../models/models.hpp"
 #include "ReadingQueue.hpp"
 
 namespace deviceservice
