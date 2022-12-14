@@ -53,7 +53,6 @@ namespace coreservices
                 this->resourceFile = transport.value("resourcefile", "");
                 this->requestServiceTopic = transport.value("requesttopic", "");
                 this->responseServiceTopic = transport.value("responsetopic", "");
-                cout << "this->responseServiceTopic : -> " << this->responseServiceTopic << endl;
             }
         }
 

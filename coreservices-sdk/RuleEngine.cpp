@@ -152,20 +152,21 @@ namespace coreservices
             cout << "Select Schedule mode" << endl;
             return;
         }
-        ActionTimestamp actionTimestamp;
-        Action action;
-
-        action.RuleId = rule.id;
-        uint64_t currentTime = localTimestamp();
 
         if (rule.activeState == ActiveState::DISABLED)
         {
             return;
         }
+
+        ActionTimestamp actionTimestamp;
+        Action action;
+        action.RuleId = rule.id;
         int noOfTimestamps = 0;
+
+        uint64_t currentTime = localTimestamp();
         for (auto time : rule.timeInDayConditions)
         {
-            cout << time << endl;
+        	cout << time << endl;
             noOfTimestamps++;
         }
 
@@ -183,7 +184,6 @@ namespace coreservices
                     rule.endInDayTime,
                     rule.repeatDays,
                     rule.timeInDayConditions[i],
-                    // time,
                     devAction.delayTime * 60);
                 if (timestamp == 0)
                 {
@@ -211,8 +211,7 @@ namespace coreservices
                     rule.startInDayTime,
                     rule.endInDayTime,
                     rule.repeatDays,
-                    //                    time,
-                    rule.timeInDayConditions[i],
+					rule.timeInDayConditions[i],
                     ruleAction.delayTime * 60);
                 if (timestamp == 0)
                 {
@@ -244,7 +243,6 @@ namespace coreservices
                     rule.endInDayTime,
                     rule.repeatDays,
                     rule.timeInDayConditions[i],
-                    // time,
                     devAction.delayTime * 60);
                 if (timestamp == 0)
                 {
@@ -272,7 +270,6 @@ namespace coreservices
                     rule.startInDayTime,
                     rule.endInDayTime,
                     rule.repeatDays,
-                    //                    time,
                     rule.timeInDayConditions[i],
                     ruleAction.delayTime * 60);
                 if (timestamp == 0)
@@ -359,37 +356,107 @@ namespace coreservices
         action.RuleId = rule.id;
 
         uint64_t currentTime = localTimestamp();
-        uint64_t startDayTimestamp = (currentTime / 86400) * 86400;
         if (rule.type == RuleType::SCHEDULE)
         {
-            if (currentTime > startDayTimestamp + rule.startInDayTime + 60)
-            {
-                return;
-            }
+            ActionTimestamp actionTimestamp;
+            Action action;
+            action.RuleId = rule.id;
+            int noOfTimestamps = 0;
+
+            uint64_t currentTime = localTimestamp();
             for (auto time : rule.timeInDayConditions)
             {
                 cout << time << endl;
+                noOfTimestamps++;
+            }
+
+            for (int i = 0; i < noOfTimestamps; i += 2)
+            {
+                cout << "Rule - Start time \t\t " << rule.timeInDayConditions[i] << endl;
                 for (auto devAction : rule.deviceActions)
                 {
+                    uint64_t timestamp = calTimestamp(
+                        true,
+                        currentTime,
+                        rule.startTime,
+                        rule.endTime,
+                        rule.startInDayTime,
+                        rule.endInDayTime,
+                        rule.repeatDays,
+                        rule.timeInDayConditions[i],
+                        devAction.delayTime * 60);
+                    if (timestamp == 0)
+                    {
+                        continue;
+                    }
+
                     action.DeviceId = devAction.deviceId;
                     action.ResourceName = devAction.resourceName;
                     action.Value = devAction.value;
+                    cout << "ResourceName :: " << action.ResourceName << "  ---  Value :: " << action.Value << endl;
                     action.ActionRuleId = "";
 
                     actionTimestamp.action = action;
-                    actionTimestamp.timestamp = startDayTimestamp + time + devAction.delayTime * 60;
-                    cout << "currentTime + devAction.delayTime * 60     " << currentTime + devAction.delayTime * 60;
+                    actionTimestamp.timestamp = timestamp + 2;
+                    cout << "\033[0;38mRule :: " << action.RuleId << " \t--- :: --- Time (Unix) :: " << actionTimestamp.timestamp << "  --- Device Action :: " << action.DeviceId << endl;
                     this->ActionTimestampList::push_back(actionTimestamp);
                 }
                 for (auto ruleAction : rule.ruleActions)
                 {
+                    uint64_t timestamp = calTimestamp(
+                        true,
+                        currentTime,
+                        rule.startTime,
+                        rule.endTime,
+                        rule.startInDayTime,
+                        rule.endInDayTime,
+                        rule.repeatDays,
+                        rule.timeInDayConditions[i],
+                        ruleAction.delayTime * 60);
+                    if (timestamp == 0)
+                    {
+                        continue;
+                    }
+
                     action.DeviceId = "";
                     action.ResourceName = "";
                     action.Value = "";
                     action.ActionRuleId = ruleAction.actionRuleId;
 
                     actionTimestamp.action = action;
-                    actionTimestamp.timestamp = startDayTimestamp + time + ruleAction.delayTime * 60;
+                    actionTimestamp.timestamp = timestamp + 2;
+                    this->ActionTimestampList::push_back(actionTimestamp);
+                }
+            }
+            for (int i = 1; i < noOfTimestamps; i += 2)
+            {
+                cout << "Rule - Stop time \t\t " << rule.timeInDayConditions[i] << endl;
+                for (auto devAction : rule.deviceActions)
+                {
+                    uint64_t timestamp = calTimestamp(
+                        true,
+                        currentTime,
+                        rule.startTime,
+                        rule.endTime,
+                        rule.startInDayTime,
+                        rule.endInDayTime,
+                        rule.repeatDays,
+                        rule.timeInDayConditions[i],
+                        devAction.delayTime * 60);
+                    if (timestamp == 0)
+                    {
+                        continue;
+                    }
+
+                    action.DeviceId = devAction.deviceId;
+                    action.ResourceName = "OnOff";
+                    action.Value = "false";
+                    cout << "ResourceName :: " << action.ResourceName << "  \t---  Value :: " << action.Value << endl;
+                    action.ActionRuleId = "";
+
+                    actionTimestamp.action = action;
+                    actionTimestamp.timestamp = timestamp + 2;
+                    cout << "\033[0;38mTrigger rule :: " << action.RuleId << " \t--- :: --- Time (Unix) :: " << actionTimestamp.timestamp << "  --- Device Action :: " << action.DeviceId << endl;
                     this->ActionTimestampList::push_back(actionTimestamp);
                 }
             }
@@ -397,7 +464,7 @@ namespace coreservices
         else
         {
             cout << "Rule.type ....."
-                 << "SCENE" << endl;
+                    << "SCENE" << endl;
             for (auto devAction : rule.deviceActions)
             {
                 action.DeviceId = devAction.deviceId;
@@ -501,6 +568,7 @@ namespace coreservices
                                 ruleOperationIds.push_back(rule.id);
                             }
                         }
+                    
                     }
                 }
             }
@@ -535,7 +603,7 @@ namespace coreservices
                             {
                                 runRule = true;
                             }
-                            else
+                            else 
                             {
                                 runRule = false;
                                 return;
@@ -556,10 +624,9 @@ namespace coreservices
                     }
                 }
             }
-        }
+        } 
         // Rule OR
-        else
-        {
+        else {
             for (auto deviceCondition : rule.deviceConditions)
             {
                 cout << deviceCondition.resourceName << " : " << deviceCondition.value << endl;

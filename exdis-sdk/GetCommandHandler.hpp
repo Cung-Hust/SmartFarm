@@ -23,6 +23,7 @@ using nlohmann::json;
 #define FORM_DATA_RESPONSE 5
 #define FORM_DATA_DELETE_GATEWAY 6
 #define FORM_DATA_OTA_GATEWAY 7
+#define FORM_DATA_MODE_GATEWAY 8
 
 #define TYPE_ACTION_UPDATE 0
 #define TYPE_ACTION_CREATE 1
@@ -63,6 +64,7 @@ public:
     void commander(bool isDetach, string requestTopic);
     void run(string requestTopic);
     void handler(string data);
+    void handler_create_gateway();
     void handler_device(int formData);
     void handler_rule();
     void handler_device_scan();
@@ -75,6 +77,7 @@ public:
     void handler_sync();
     void handler_response();
     void handler_delete_gateway();
+    void handler_mode_gateway();
     void handler_error();
     void handler_rule_schedule();
     void handler_rule_scene();

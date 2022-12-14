@@ -144,6 +144,7 @@ void GetResponseHandler::handler(string data)
             {"Value", 0},
             {"Battery", 100},
             {"Delay", 10},
+            {"isConfig", true},
         }};
         json msgToCloud_j_ = {
             {"Head",
@@ -172,6 +173,7 @@ void GetResponseHandler::handler(string data)
         {"Value", 0},
         {"Battery", 100},
         {"Delay", 10},
+        {"isConfig", true},
     }};
     msgToCloud_j = {
         {"Head",

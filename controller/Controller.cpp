@@ -25,12 +25,9 @@ void RequestController::server_()
 
     while (true)
     {
-        // srand(time(0));
-        // int randint = 10000 + (rand() % 5001);
-        // cout << "random number: " << 10000 + (rand() % 5001) << "\n";
         if (this->transport->getMessage(this->api, message))
         {
-            cout << "this->api :: " << this->api << "  message ::  " << message << endl;
+            cout << endl << "\033[0;38mTopic: " << this->api << "\t||\tMessage ::  " << message << endl;
             dto::SimpleRequest req;
             try
             {
@@ -57,7 +54,7 @@ void RequestController::server_()
                 callback(req.header, message);
             }
         };
-        usleep(5000);
+        usleep(10000);
         // usleep(randint);
         // sleep(1);
     }
@@ -114,7 +111,7 @@ void ResponseController::server_()
                 this->callback(res.header, message);
             }
         };
-        usleep(5000);
+        usleep(10000);
         // sleep(1);
     }
 }

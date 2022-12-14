@@ -66,6 +66,7 @@ namespace coreservices
             slog_print(SLOG_ERROR, 1, err.c_str());
             return;
         }
+        
         err = this->server.publishMultiReadings(req.header.rqi, readings);
         if (err != "")
         {

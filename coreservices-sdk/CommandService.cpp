@@ -174,8 +174,14 @@ namespace coreservices
 
             return;
         }
-
+        
+        if (req.id == "Gateway")
+        {
+            cout << "Set Gateway mode" << endl;
+            // return;
+        }
         auto device = Db::getDb()->readDevice(req.id, err);
+
         if (err != "")
         {
             err = this->name + ": " + err;

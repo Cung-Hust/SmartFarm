@@ -17,7 +17,7 @@ using nlohmann::json;
 #define TEMP_SENSOR_NAME "AirHumiTempSensor"
 #define TEMP_SENSOR_TYPE 0
 #define TEMP_SENSOR_MIN_VALUE 0
-#define TEMP_SENSOR_MAX_VALUE 100
+#define TEMP_SENSOR_MAX_VALUE 55
 
 #define HUMI_SENSOR_NAME "AirHumiTempSensor"
 #define HUMI_SENSOR_TYPE 1

@@ -80,7 +80,8 @@ void GetInfoHandler::handler(string data)
     }
 
     string profileName = device.profileName;
-    cout << "profileName: " << "--> " << profileName << " <--" << endl;
+    cout << "profileName: "
+         << "--> " << profileName << " <--" << endl;
     if (profileName == "Relay")
     {
         int relayState;
@@ -110,10 +111,12 @@ void GetInfoHandler::handler(string data)
     }
     else if (profileName == "Lora")
     {
-        uint8_t type;
+        int type = 0;
         auto resources = Db::getDb()->listReading(deviceId);
         uint8_t battery = 100;
-        float value;
+        uint8_t reportSensorTime = 0;
+        bool isConfig = true;
+        float value = 0;
 
         for (auto &reading : readings)
         {
@@ -126,8 +129,13 @@ void GetInfoHandler::handler(string data)
                 battery = stoi(valueStr);
                 break;
             }
+            if (resourceName == "ReportSensorTime")
+            {
+                reportSensorTime = stoi(valueStr);
+                return;
+            }
         }
-
+        isConfig = reportSensorTime == 1 ? false : true;
         for (auto &reading : readings)
         {
             string resourceName = reading.resourceName;
@@ -178,6 +186,7 @@ void GetInfoHandler::handler(string data)
                 {"TypeSensor", type},
                 {"Value", value},
                 {"Battery", battery},
+                {"IsConfig", isConfig},
             };
             sensors.push_back(sensor);
         }
@@ -190,20 +199,18 @@ void GetInfoHandler::handler(string data)
               {"DateTime", time(0)}}},
             {"Sensor", sensors}};
     }
-    else if(profileName == "Gateway")
+    else if (profileName == "Gateway")
     {
-        int mode;
+        int gatewayMode;
         json gateways;
 
         for (auto &reading : readings)
         {
             if (reading.resourceName == "Mode")
             {
-                mode = reading.value == "true" ? 1 : 0;
+                gatewayMode = stoi(reading.value);
                 json gateway = {
-                    {"ID", "Gateway"},
-                    {"Type", 1},
-                    {"Pull", mode},
+                    {"Mode", to_string(gatewayMode)},
                 };
                 gateways.push_back(gateway);
             }
@@ -212,7 +219,7 @@ void GetInfoHandler::handler(string data)
             {"Head",
              {{"IDMessage", rqi},
               {"TypeMessage", 0},
-              {"FormData", 1},
+              {"FormData", 8},
               {"IDGateway", getMacGW()},
               {"DateTime", time(0)}}},
             {"Gateway", gateways}};

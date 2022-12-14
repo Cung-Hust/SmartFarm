@@ -37,7 +37,7 @@ string Command::issueGetCommand(string &rqi, string devId, vector<string> resour
 
 string Command::issueSetCommand(string &rqi, string devId, map<string, string> resources, map<string, string> options)
 {
-        if (rqi == "")
+    if (rqi == "")
     {
         rqi = genUuid();
     }

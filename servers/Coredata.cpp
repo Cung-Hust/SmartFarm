@@ -59,7 +59,6 @@ namespace server
         request.readings = dtoReadings;
 
         string requestStr = serialize<dto::AddReadingsRequest>(request);
-        cout << "<--------------------------------- SENT --------------------------------->" << endl;
         if (this->transport->publish(this->publishTopic, requestStr))
         {
             return "";

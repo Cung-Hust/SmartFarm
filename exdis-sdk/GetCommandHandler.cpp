@@ -39,6 +39,7 @@ void GetCommandHandler::commander(bool isDetach, string requestTopic)
 
 void GetCommandHandler::run(string requestTopic)
 {
+    this->handler_create_gateway();
     string data;
     while (true)
     {
@@ -50,12 +51,41 @@ void GetCommandHandler::run(string requestTopic)
     }
 }
 
+void GetCommandHandler::handler_create_gateway()
+{
+    string err;
+    auto device = Db::getDb()->readDevice("Gateway", err);
+    if (err != "")
+    {
+        Metadata client("exdis", "rd/metadata/request");
+        model::Device dev;
+        string uuid = "11112222";
+        string idMessage;
+        idMessage = "Gateway create";
+        dev.id = "Gateway";
+        dev.name = "Gateway";
+        dev.type = DeviceType::ACTUATOR;
+        dev.created = time(0);
+        dev.modified = time(0);
+        dev.adminState = AdminState::UNLOCKED;
+        dev.operatingState = OperatingState::ONLINE;
+        dev.lastConnected = time(0);
+        dev.profileName = "Gateway";
+        dev.serviceName = "local";
+        map<string, string> mapTest;
+        mapTest["Mode"] = "0";
+        // end
+        dev.protocols = mapTest;
+        client.addDevice(uuid, dev, true);
+    }
+}
+
 void GetCommandHandler::handler(string data)
 {
     this->cmd = data;
     server::ExDis server("ExDis");
     json command = json::parse(data);
-    slog_print(SLOG_INFO, 1, "\033[1;37mData from cloud: %s", data.c_str());
+    slog_print(SLOG_INFO, 1, "\033[0;33mData from cloud: %s", data.c_str());
     int formData = command["Head"]["FormData"];
     string rspTopic = getMacGW() + "gateway";
     if (formData == 1000)
@@ -100,9 +130,9 @@ void GetCommandHandler::handler(string data)
     case FORM_DATA_DELETE_GATEWAY:
         this->handler_delete_gateway();
         break;
-    // case FORM_DATA_OTA_GATEWAY:
-    //     this->handler_ota_gateway();
-    //     break;
+    case FORM_DATA_MODE_GATEWAY:
+        this->handler_mode_gateway();
+        break;
     default:
         this->handler_error();
         break;
@@ -160,6 +190,13 @@ void GetCommandHandler::handler_rule()
 
 void GetCommandHandler::handler_device_control()
 {
+    // Check mode
+    auto resources = Db::getDb()->listReading("Gateway");
+    if (resources[0].value != "0")
+    {
+        cout << "Select Manual mode" << endl;
+        return;
+    }
     json command = json::parse(this->cmd);
     Command client("exdis", "rd/command/request");
     int typeDevice = command["Control"][0]["Type"];
@@ -327,6 +364,20 @@ void GetCommandHandler::handler_delete_gateway()
     osExec(reboot_command);
 }
 
+void GetCommandHandler::handler_mode_gateway()
+{
+    json command = json::parse(this->cmd);
+    Command client("exdis", "rd/command/request");
+    string uuid = genUuid();
+    map<string, string> resources;
+    string devId = "Gateway";
+    string mode = command["Gateway"][0]["Mode"];
+    resources["Mode"] = mode;
+    map<string, string> options;
+    options["response"] = "false";
+    client.issueSetCommand(uuid, devId, resources, options);
+}
+
 void GetCommandHandler::handler_error()
 {
 }
@@ -388,12 +439,7 @@ void GetCommandHandler::handler_rule_native()
     }
 }
 
-/**
- * @brief
- *
- * @param client
- * @param command
- */
+
 void handler_rule_schedule_create(Rule client, json command)
 {
     string rqi = genUuid();
@@ -448,7 +494,7 @@ void handler_rule_schedule_create(Rule client, json command)
     rule.repeatDays = repeatDays;
     vector<uint32_t> timeInDayConditions;
     auto timestamps = command["Rule"][0]["Input"]["Schedule"];
-    for (auto time : timestamps)
+    for (auto time:timestamps)
     {
         cout << "Time start: " << time["TimeStart"] << endl;
         cout << "Time stop: " << time["TimeStop"] << endl;
