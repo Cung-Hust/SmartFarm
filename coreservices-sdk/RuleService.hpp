@@ -41,6 +41,7 @@ namespace coreservices
         void readRuleHandler(dto::HeaderRequest header, string message);
         void listRuleHandler(dto::HeaderRequest header, string message);
         void setStateRuleHandler(dto::HeaderRequest header, string message);
+        void setStateAllRuleHandler(dto::HeaderRequest header, string message);
         void setTriggerRuleHandler(dto::HeaderRequest header, string message);
         void addReadingsHandler(dto::HeaderRequest header, string message);
 

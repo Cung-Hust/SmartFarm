@@ -55,6 +55,7 @@ namespace server
         {
             return "";
         };
+        return "";
     };
 
     string DeviceService::responseDiscoveryCommand(string rqi, string error, model::Device device)

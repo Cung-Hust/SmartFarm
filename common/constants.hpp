@@ -37,6 +37,7 @@
 #define OP_RULE_LIST "rule:list"
 #define OP_RULE_READ "rule:read"
 #define OP_RULE_STATE "rule:state"
+#define OP_RULE_STATE_ALL "rule:stateall"
 #define OP_RULE_TRIGGER "rule:trigger"
 
 #define OP_NOTIFY_ADD "notify:add"

@@ -149,38 +149,33 @@ void GetInfoHandler::handler(string data)
             if (resourceName == "Temperature")
             {
                 type = 0;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "Humidity")
             {
                 type = 1;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "SoilMoisture")
             {
                 type = 2;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "Lux")
             {
                 type = 3;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "CO2")
             {
                 type = 4;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "EC")
             {
                 type = 5;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "PH")
             {
                 type = 6;
-                value = roundf(stof(valueStr) * 100) / 100;
             }
+            cout << stof(valueStr) << endl;
+            value = stof(valueStr);
             json sensor = {
                 {"ID", deviceId},
                 {"TypeSensor", type},
@@ -188,6 +183,7 @@ void GetInfoHandler::handler(string data)
                 {"Battery", battery},
                 {"IsConfig", isConfig},
             };
+            cout << sensor << endl;
             sensors.push_back(sensor);
         }
         msgToCloud_j = {

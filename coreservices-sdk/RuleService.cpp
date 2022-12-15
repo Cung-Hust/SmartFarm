@@ -32,6 +32,7 @@ namespace coreservices
         this->requester.registerCallback(OP_RULE_READ, bind(&RuleService::readRuleHandler, this, placeholders::_1, placeholders::_2));
         this->requester.registerCallback(OP_RULE_LIST, bind(&RuleService::listRuleHandler, this, placeholders::_1, placeholders::_2));
         this->requester.registerCallback(OP_RULE_STATE, bind(&RuleService::setStateRuleHandler, this, placeholders::_1, placeholders::_2));
+        this->requester.registerCallback(OP_RULE_STATE_ALL, bind(&RuleService::setStateAllRuleHandler, this, placeholders::_1, placeholders::_2));
         this->requester.registerCallback(OP_RULE_TRIGGER, bind(&RuleService::setTriggerRuleHandler, this, placeholders::_1, placeholders::_2));
 
         this->requester_1.init(this->readingServiceTopic);
@@ -425,6 +426,74 @@ namespace coreservices
             err = this->name + ": " + err;
             cout << "RuleService::setStateRuleHandler :: --> 6 --> " << err.c_str() << endl;
             slog_print(SLOG_ERROR, 1, err.c_str());
+        }
+    }
+
+    void RuleService::setStateAllRuleHandler(dto::HeaderRequest header, string message)
+    {
+        string err;
+        string responseTopic = this->getReponseTopic(header.client);
+
+        dto::SetStateRuleRequest req;
+        try
+        {
+            deserialize<dto::SetStateRuleRequest>(message, req);
+        }
+        catch (...)
+        {
+            err = INVALID_MESSAGE_ERROR;
+            err = this->name + ": " + err;
+            cout << "RuleService::setStateRuleHandler :: --> 1 --> " << err.c_str() << endl;
+            slog_print(SLOG_ERROR, 1, err.c_str());
+            err = this->server.response(responseTopic, req.header.rqi, err);
+            if (err != "")
+            {
+                err = this->name + ": " + err;
+                cout << "RuleService::setStateRuleHandler :: --> 2 --> " << err.c_str() << endl;
+                slog_print(SLOG_ERROR, 1, err.c_str());
+            }
+
+            return;
+        }
+        ActiveState activeState = req.activestate;
+
+        cout << "ActiveState activeState = req.activestate :: " << activeState << endl;
+
+        auto ruleSchedules = Db::getDb()->listRule("1", err);
+        for (auto rule : ruleSchedules) 
+        {
+            Db::getDb()->updateRuleActiveState(req.id, activeState, err);
+            if (err != "")
+            {
+                err = this->name + ": " + err;
+                cout << "RuleService::setStateRuleHandler :: --> 3 --> " << err.c_str() << endl;
+                slog_print(SLOG_ERROR, 1, err.c_str());
+                err = this->server.response(responseTopic, req.header.rqi, err);
+                if (err != "")
+                {
+                    err = this->name + ": " + err;
+                    cout << "RuleService::setStateRuleHandler :: --> 4 --> " << err.c_str() << endl;
+                    slog_print(SLOG_ERROR, 1, err.c_str());
+                }
+
+                return;
+            }
+
+            this->ruleEngine.setStateCallback(req.id, activeState, err);
+            if (err != "")
+            {
+                err = this->name + ": " + err;
+                cout << "RuleService::setStateRuleHandler :: --> 5 --> " << err.c_str() << endl;
+                slog_print(SLOG_ERROR, 1, err.c_str());
+            }
+
+            err = this->server.response(responseTopic, req.header.rqi, err);
+            if (err != "")
+            {
+                err = this->name + ": " + err;
+                cout << "RuleService::setStateRuleHandler :: --> 6 --> " << err.c_str() << endl;
+                slog_print(SLOG_ERROR, 1, err.c_str());
+            }
         }
     }
 
