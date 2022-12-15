@@ -39,7 +39,7 @@ void GetCommandHandler::commander(bool isDetach, string requestTopic)
 
 void GetCommandHandler::run(string requestTopic)
 {
-    this->handler_create_gateway();
+    // this->handler_create_gateway();
     string data;
     while (true)
     {

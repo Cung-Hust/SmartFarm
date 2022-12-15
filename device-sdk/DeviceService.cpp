@@ -199,7 +199,7 @@ namespace deviceservice
         {
             slog_print(SLOG_ERROR, 1, err.c_str());
         }
-
+        slog_print(SLOG_INFO, 1, "Add new device: %s", req.device.id.c_str());
         return;
     }
 

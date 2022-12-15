@@ -115,7 +115,7 @@ void GetInfoHandler::handler(string data)
         auto resources = Db::getDb()->listReading(deviceId);
         uint8_t battery = 100;
         uint8_t reportSensorTime = 0;
-        bool isConfig = true;
+        bool isConfig = false;
         float value = 0;
 
         for (auto &reading : readings)
@@ -126,16 +126,16 @@ void GetInfoHandler::handler(string data)
 
             if (resourceName == "Battery")
             {
-                battery = stoi(valueStr);
+                battery = stof(valueStr);
                 break;
             }
             if (resourceName == "ReportSensorTime")
             {
-                reportSensorTime = stoi(valueStr);
+                reportSensorTime = stof(valueStr);
                 return;
             }
         }
-        isConfig = reportSensorTime == 1 ? false : true;
+        isConfig = reportSensorTime == 1 ? true : false;
         for (auto &reading : readings)
         {
             string resourceName = reading.resourceName;
@@ -149,37 +149,37 @@ void GetInfoHandler::handler(string data)
             if (resourceName == "Temperature")
             {
                 type = 0;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "Humidity")
             {
                 type = 1;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "SoilMoisture")
             {
                 type = 2;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "Lux")
             {
                 type = 3;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "CO2")
             {
                 type = 4;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "EC")
             {
                 type = 5;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             else if (resourceName == "PH")
             {
                 type = 6;
-                value = roundf(stoi(valueStr) * 100) / 100;
+                value = roundf(stof(valueStr) * 100) / 100;
             }
             json sensor = {
                 {"ID", deviceId},

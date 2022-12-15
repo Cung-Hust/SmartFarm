@@ -13,7 +13,6 @@ Metadata::Metadata(string clientName, string resquestTopic)
 
 string Metadata::addDevice(string &rqi, model::Device device, bool isNotify)
 {
-    cout << "Test Add device" << endl;
     if (rqi == "")
     {
         rqi = genUuid();
@@ -33,7 +32,6 @@ string Metadata::addDevice(string &rqi, model::Device device, bool isNotify)
     request.notify = isNotify;
 
     string requestStr = serialize<dto::AddDeviceRequest>(request);
-    cout << "Topic 1: " << this->resquestTopic << endl;
     if (this->transport->publish(this->resquestTopic, requestStr))
     {
         return "";
